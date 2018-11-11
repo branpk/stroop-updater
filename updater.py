@@ -145,6 +145,26 @@ def get_default_install_path(config, version):
   return path
 
 
+def uninstall_version(config, install_id):
+  try:
+    install = [i for i in config['installed'] if i['install_id'] == install_id][0]
+    print('Uninstalling version ' + install['version'])
+
+    # Attempt to delete .exe first in case the program is running
+    exe = glob.glob(install['path'] + '/**/STROOP.exe', recursive=True)[0]
+    os.remove(exe)
+
+    config['installed'].remove(install)
+    if config['default_install_id'] == install_id:
+      config['default_install_id'] = None
+    save_config(config)
+
+    shutil.rmtree(install['path'])
+  except:
+    print('Uninstallation failed')
+    print(traceback.format_exc())
+
+
 def launch_app(config, install_id):
   launch_install = [i for i in config['installed'] if i['install_id'] == install_id][0]
   launch_exe = glob.glob(launch_install['path'] + '/**/STROOP.exe', recursive=True)[0]
@@ -166,7 +186,7 @@ else:
   launch_app(config, config['default_install_id'])
 
 
-print('Cheking for updates')
+print('Checking for updates')
 try:
   with urllib.request.urlopen('https://api.github.com/repos/SM64-TAS-ABC/STROOP/releases') as response:
     releases = json.loads(response.read().decode('utf-8'))
@@ -196,8 +216,14 @@ try:
     else:
       config['default_install_id'] = install.install_id
 
-  save_config(config)
+    save_config(config)
 
 except:
   print('Failed to check for new STROOP versions')
   print(traceback.format_exc())
+
+
+print('Uninstalling old versions')
+for install in list(config['installed']):
+  if config['default_install_id'] != install['install_id']:
+    uninstall_version(config, install['install_id'])
