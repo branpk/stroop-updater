@@ -145,12 +145,28 @@ def get_default_install_path(config, version):
   return path
 
 
+def launch_app(config, install_id):
+  launch_install = [i for i in config['installed'] if i['install_id'] == install_id][0]
+  launch_exe = glob.glob(launch_install['path'] + '/**/STROOP.exe', recursive=True)[0]
+
+  print('Launching ' + launch_install['version'] + ' (' + launch_exe + ')')
+  subprocess.Popen(launch_exe, cwd=os.path.dirname(launch_exe))
+
+
 config = load_config()
 installed_versions = [Version.parse(i['version']) for i in config['installed']]
 
 latest_installed_dev = max([v for v in installed_versions if v.dev], default=None)
 latest_installed_release = max([v for v in installed_versions if not v.dev], default=None)
 
+
+if config['default_install_id'] is None:
+  print('Performing first time install. You\'ll need to run the launcher again after it completes.')
+else:
+  launch_app(config, config['default_install_id'])
+
+
+print('Cheking for updates')
 try:
   with urllib.request.urlopen('https://api.github.com/repos/SM64-TAS-ABC/STROOP/releases') as response:
     releases = json.loads(response.read().decode('utf-8'))
@@ -185,14 +201,3 @@ try:
 except:
   print('Failed to check for new STROOP versions')
   print(traceback.format_exc())
-
-
-if config['default_install_id'] is None:
-  print('Default install is not set')
-  sys.exit(1)
-
-launch_install = [i for i in config['installed'] if i['install_id'] == config['default_install_id']][0]
-launch_exe = glob.glob(launch_install['path'] + '/**/STROOP.exe', recursive=True)[0]
-
-print('Launching ' + launch_install['version'] + ' (' + launch_exe + ')')
-subprocess.Popen(launch_exe, cwd=os.path.dirname(launch_exe))

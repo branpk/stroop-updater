@@ -1,0 +1,6 @@
+build
+env
+*.spec
+__pycache__
+config.json
+versions
