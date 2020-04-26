@@ -55,7 +55,7 @@ class Install:
 
     def report(count, block_size, total_size):
       if total_size != 0:
-        install.progress = min(count * block_size, total_size) / total_size
+        install.progress = (min(count * block_size, total_size) / total_size) * 100
 
     def thread():
       try:
@@ -85,7 +85,7 @@ class Install:
     install.thread = threading.Thread(target=thread)
     install.action = 'Queued'
     install.progress = None
-
+	
     install.thread.start()
     return install
 
@@ -208,7 +208,10 @@ try:
     print('Installing ' + str(version))
     install = Install.begin(config, version, download_url, install_path)
     while not install.is_done():
-      print(install.action, install.progress or '')
+      if install.progress is None:
+        print(install.action, install.progress or '')
+      else:
+        print(install.action, '{0:.2f}'.format(install.progress).zfill(5) + '%' or '') #i am literally the greatest programmer alive
       time.sleep(1)
     if install.failed():
       print('Failed to install version ' + str(version))
